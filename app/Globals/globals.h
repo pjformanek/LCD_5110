@@ -1,4 +1,4 @@
-//*****************************************************************************
+//****************************************************************************
 //
 //! File: 			globals.h
 //! Version:		1.0.0.0
@@ -8,11 +8,11 @@
 //!	Contains all global definitions
 //!
 //***********************************************************
-#ifndef _GLOBALS_H
-#define _GLOBALS_H
+#ifndef _globals_h
+#define _globals_h
 
 #include "stdint.h"
 
 volatile uint32_t TimingDelay;
 
-#endif
+#endif // END OF _globals_h
