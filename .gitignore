@@ -52,5 +52,10 @@ Mkfile.old
 dkms.conf
 
 # COOCOX Component Modules
-**/*
+*/*
 !/app/*
+*.md
+*.lbr
+*.cogui
+*.comarker
+*.coproj
