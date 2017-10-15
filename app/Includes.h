@@ -2,8 +2,8 @@
 //
 //! File:			Includes.h
 //! Version:		1.0.0.0
-//! Date:			Oct. 10, 2017
 //! Author:			PFormanek
+//! Date:			Oct. 10, 2017
 //!
 //!	Description:	Contains all the include files required
 //

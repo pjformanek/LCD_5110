@@ -2,8 +2,8 @@
 //
 //! File:			main.c
 //! Version:		1.0.0.0
-//! Date:			Oct. 10, 2017
 //! Author:			PFormanek
+//! Date:			Oct. 10, 2017
 //!
 //!	Description:	program to interface nokia5110 LCD module
 //
