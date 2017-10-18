@@ -28,5 +28,7 @@
 #include "stdint.h"
 #include "delays.h"
 #include "globals.h"
+#include "lcd.h"
 
-#endif // END OF _includes_h
+#endif
+// END OF _includes_h

@@ -10,6 +10,8 @@
 //
 //****************************************************************************
 
+#include "lcd.h"
+
 /*
 Name:		LCDWriteBit
 Args:		u8 bit
@@ -17,9 +19,17 @@ Return:
 Desc'n:		Sends one bit of data to the LCD module
 */
 void LCDWriteBit(u8 bit){
-	GPIOPinState(LCDSCLK, LO);
-	GPIOPinState(LCDSDIN, bit);
-	GPIOPinState(LCDSCLK, HI);
+	HAL_GPIO_WritePin(LCDSCLKPort, LCDSCLKPin, GPIO_PIN_RESET);
+//	DelayMs(1);
+	HAL_Delay(1);
+	bit ?
+		HAL_GPIO_WritePin(LCDSDINPort, LCDSDINPin, GPIO_PIN_SET):
+			HAL_GPIO_WritePin(LCDSDINPort, LCDSDINPin, GPIO_PIN_RESET);
+//	DelayMs(1);
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(LCDSCLKPort, LCDSCLKPin, GPIO_PIN_SET);
+//	DelayMs(1);
+	HAL_Delay(1);
 }
 
 /*
@@ -30,10 +40,10 @@ Desc'n:		Sends one byte of data to the LCD module
 */
 void LCDWriteByte(u8 byte){
 	u8 loop;
-	GPIOPinState(LCDSCE, LO);
+	HAL_GPIO_WritePin(LCDSCEPort, LCDSCEPin, GPIO_PIN_RESET);
+//	DelayMs(1);
+	HAL_Delay(1);
 	for(loop = 0; loop < 8; loop++){
-		if(loop == 7)
-			GPIOToggle(LCDDC);
 //bitshifts by loop value and masks bit0 to determine each bit value 
 //this will sent the byte MSB first
 		if((byte<<loop) & 0x80)
@@ -41,8 +51,9 @@ void LCDWriteByte(u8 byte){
 		else
 			LCDWriteBit(LO);
 	}
-	GPIOToggle(LCDDC);
-	GPIOPinState(LCDSCE, HI)
+	HAL_GPIO_WritePin(LCDSCEPort, LCDSCEPin, GPIO_PIN_SET);
+//	DelayMs(1);
+	HAL_Delay(1);
 }
 
 /*
@@ -53,8 +64,10 @@ Desc'n:		Writes data to the display RAM
 */
 void LCDWrite(u8 mode, u8 data){
 	!mode ?
-		GPIOPinState(LCDDC, LO):
-		GPIOPinState(LCDDC, HI);
+		HAL_GPIO_WritePin(LCDDCPort, LCDDCPin, GPIO_PIN_RESET):
+		HAL_GPIO_WritePin(LCDDCPort, LCDDCPin, GPIO_PIN_SET);
+//	DelayMs(1);
+	HAL_Delay(1);
 	LCDWriteByte(data);
 }
 
@@ -64,9 +77,10 @@ Args:		u8 command
 Return:		
 Desc'n:		Sets the configuration of the display
 
-			command can be one of LCDDispConf params defined in lcd.h
+			command can be one of group LCDDispConf x defined in lcd.h
 */
 void LCDDispConf(u8 command){
+	LCDFuncSet(LCDBasicInstructions);
 	LCDWrite(0, command);	
 }
 
@@ -78,6 +92,7 @@ Desc'n:		Sets the y-address of the RAM
 			Y can be a value between 0 and 5
 */
 void LCDSetY(u8 Y){
+	LCDFuncSet(LCDBasicInstructions);
 	LCDWrite(0, (0x40 | Y));
 }
 
@@ -89,6 +104,7 @@ Desc'n:		Sets the x-address of the RAM
 			X can ba a value between 0 and 83
 */
 void LCDSetX(u8 X){
+	LCDFuncSet(LCDBasicInstructions);
 	LCDWrite(0, (0x80 | X));
 }
 
@@ -99,9 +115,9 @@ Args:		u8 X
 Return:		void
 Desc'n:		Sets the x and y addresses of the RAm
 */
-void LCDSetXy(u8 X, u8 Y){
-	LCDSet(X);
-	LCDSet(Y);
+void LCDSetXY(u8 X, u8 Y){
+	LCDSetX(X);
+	LCDSetY(Y);
 
 }
 
@@ -114,7 +130,7 @@ Descn:		Sets temperature coefficient to be in the
 			to be operating sluggish, then the coefficient may need to be
 			incresed. There are 4 levels of control
 			
-			tempCoeff can be one of LCDSetTempCoeff params defined in lcd.h
+			tempCoeff can be one of group LCDSetTempCoeff defined in lcd.h
 */
 void LCDSetTempCoeff(u8 tempCoeff){
 	LCDFuncSet(LCDExtendedInstructions);
@@ -170,6 +186,7 @@ Name:		LCDFuncSet
 Args:		u8 funcSet
 Return:		void
 Desc'n:		power down control, entry mode, extended instruction set (H)
+			funcSet can be one of group LCDFunSet defined in lcd.h
 */	
 void LCDFuncSet(u8 funcSet){
 	LCDWrite(0, funcSet);
@@ -182,9 +199,11 @@ Return:		void
 Desc'n"		Resets the LCD module 
 */
 void LCDReset(void){
-	GPIOPinState(LO);//PF FIX reset GPIO pin
-	DelayMs(5);
-	GPIOPinState(HI);//PF FIX set GPIO pin
+	HAL_GPIO_WritePin(LCDResetPort, LCDResetPin, GPIO_PIN_RESET);
+//	DelayMs(10);
+	HAL_Delay(50);
+
+	HAL_GPIO_WritePin(LCDResetPort, LCDResetPin, GPIO_PIN_SET);
 }
 
 /*
@@ -212,23 +231,27 @@ Desc'n:		Initializes the LCD for operation after power on
 			command 0x09 (D=0, E=1) Normal mode
 */	
 void LCDInit(void){
-	//		Delays may be required between commands max
-	//		SCLK freq is 4Mhz
+	//		Delays may be required between commands
+	//		max SCLK freq is 4Mhz
 	//		so min SCLK tick is 250ns
-	//		typical setup time is 100ns
+	//		minimum setup time is 100ns
 	LCDReset();
+//	DelayMs(1);
 	LCDFuncSet(LCDExtendedInstructions);
+//	DelayMs(1);
+	HAL_Delay(5);
 	LCDSetVop(0x20);
+//	DelayMs(1);
+	HAL_Delay(5);
 	LCDSetTempCoeff(LCDTempCoeff0);
+//	DelayMs(1);
+	HAL_Delay(5);
 	LCDSetBias(LCDBiasLevel4);
+//	DelayMs(1);
+	HAL_Delay(5);
 	LCDFuncSet(LCDBasicInstructions);
+//	DelayMs(1);
+	HAL_Delay(5);
 	LCDDispConf(LCDNormalMode);
-}
-
-void GPIOPinstate(u8 GPIOPin, u8 state){
-	GPIOC->BSRR
-}
-
-void GPIOPinToggle(u8 GPIOPin){
-	
+//	DelayMs(1);
 }
